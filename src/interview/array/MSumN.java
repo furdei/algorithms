@@ -1,8 +1,6 @@
 package interview.array;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * In an array of size N find all combination of exactly M elements
@@ -12,7 +10,7 @@ import java.util.List;
  */
 public class MSumN {
 
-    List<int[]> findSums(int[] array, int m, long sum) {
+    public List<int[]> findSums(int[] array, int m, int sum) {
         if (array == null || array.length < m || m < 1) {
             return null;
         }
@@ -53,12 +51,129 @@ public class MSumN {
         return sums;
     }
 
+    private static class IntArray {
+
+        private int[] array;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            IntArray intArray = (IntArray) o;
+
+            if (!Arrays.equals(array, intArray.array)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(array);
+        }
+    }
+
+    public List<int[]> findSumsWithHashMap(int[] array, int m, int sum) {
+        if (array == null || array.length < m || m < 1) {
+            return null;
+        }
+
+        List<int[]> sums = new LinkedList<>();
+        int halfM = m / 2;
+
+        int[] index = new int[halfM];
+        for (int i = 0; i < halfM; i++) {
+            index[i] = i;
+        }
+
+        Map<Integer, List<Set<Integer>>> hashSums = new HashMap<>();
+
+        while (index[0] < array.length - halfM) {
+            int currentSum = array[index[0]];
+            Set<Integer> indices = new HashSet<>();
+            for (int i = 0; i < halfM; i++) {
+                indices.add(index[i]);
+            }
+
+            for (int i = 1; i < halfM; i++) {
+                currentSum += array[index[i]];
+            }
+
+            List<Set<Integer>> listOfSums = hashSums.get(currentSum);
+            if (listOfSums == null) {
+                listOfSums = new LinkedList<>();
+                hashSums.put(currentSum, listOfSums);
+            }
+            listOfSums.add(indices);
+
+            int i = halfM - 1;
+            while (i >= 0 && (++index[i] > array.length - halfM + i)) {
+                i--;
+            }
+
+            if (i >= 0) {
+                for (int j = i + 1; j < halfM; j++) {
+                    index[j] = index[j - 1] + 1;
+                }
+            }
+        }
+
+        Set<IntArray> processedIndices = new HashSet<>();
+
+        for (Map.Entry<Integer, List<Set<Integer>>> halfSum : hashSums.entrySet()) {
+            int targetSum = sum - halfSum.getKey();
+            List<Set<Integer>> indices = hashSums.get(targetSum);
+
+            if (indices != null) {
+                for (Set<Integer> ind1 : halfSum.getValue()) {
+                    for (Set<Integer> ind2 : indices) {
+                        Set<Integer> indicesCopy = new HashSet<>(ind1);
+                        indicesCopy.retainAll(ind2);
+                        if (indicesCopy.size() == 0) {
+                            int[] indicesArray = new int[m];
+                            Iterator<Integer> i = ind1.iterator();
+                            Iterator<Integer> j = ind2.iterator();
+                            Integer nextI = i.next();
+                            Integer nextJ = j.next();
+
+                            for (int k = 0; k < m; k++) {
+                                if (nextI != null && nextJ != null && nextI <= nextJ || (nextI != null && nextJ == null)) {
+                                    indicesArray[k] = array[nextI];
+                                    nextI = i.hasNext() ? i.next() : null;
+                                } else {
+                                    indicesArray[k] = array[nextJ];
+                                    nextJ = j.hasNext() ? j.next() : null;
+                                }
+                            }
+
+                            IntArray cache = new IntArray();
+                            cache.array = Arrays.copyOf(indicesArray, m);
+
+                            if (!processedIndices.contains(cache)) {
+                                sums.add(indicesArray);
+                                processedIndices.add(cache);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return sums;
+    }
+
     public static void main(String[] args) {
         MSumN nSumM2 = new MSumN();
         int[] array = { 3, 4, 5, 6, 7, 8, 9 };
-        List<int[]> sums = nSumM2.findSums(array, 3, 18);
+        int m = 4;
+        int targetSum = 22;
+        List<int[]> sums = nSumM2.findSums(array, m, targetSum);
         for (int[] sum : sums) {
-            System.out.println("NSumM2.main result: " + Arrays.toString(sum));
+            System.out.println("NSumM2.main result 1: " + Arrays.toString(sum));
+        }
+        List<int[]> sums2 = nSumM2.findSumsWithHashMap(array, m, targetSum);
+        for (int[] sum : sums2) {
+            System.out.println("NSumM2.main result 2: " + Arrays.toString(sum));
         }
     }
 
