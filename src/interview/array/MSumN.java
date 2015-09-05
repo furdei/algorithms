@@ -51,6 +51,95 @@ public class MSumN {
         return sums;
     }
 
+    public List<int[]> findSumsBranches(int[] srcArray, int m, int sum) {
+        if (srcArray == null || srcArray.length < m || m < 1) {
+            return null;
+        }
+
+        int[] array = Arrays.copyOf(srcArray, srcArray.length);
+        Arrays.sort(array);
+
+        List<int[]> sums = new LinkedList<>();
+        int[] index = new int[m];
+        int currentSum = 0;
+
+        for (int i = 0; i < m - 1; i++) {
+            index[i] = i;
+            currentSum += array[i];
+        }
+
+        //   m: 2
+        // sum: 7
+        // ind:  0  1  2  3  4  5
+        // arr: -3  1  2  5  9 15
+        // len: 6
+
+        boolean done = false;
+
+        while (!done) {
+            // use binary search to find the last index in a sorted array
+            int searchStartIndex = m == 1 ? 0 : index[m - 2] + 1;
+            int searchValue = sum - currentSum;
+            int targetIndex = Arrays.binarySearch(array, searchStartIndex, array.length, searchValue);
+
+            if (targetIndex >= searchStartIndex && targetIndex < array.length) {
+                // searchValue is found, but there could be several identical values
+                int countDuplicates = 1;
+                int i = targetIndex;
+                while (i > 0 && array[i] == array[i - 1]) {
+                    i--;
+                    countDuplicates++;
+                }
+                i = targetIndex;
+                while (i < array.length - 1 && array[i] == array[i + 1]) {
+                    i++;
+                    countDuplicates++;
+                }
+
+                // add the result
+                index[m - 1] = targetIndex;
+                int[] result = new int[m];
+
+                for (i = 0; i < m; i++) {
+                    result[i] = array[index[i]];
+                }
+
+                for (i = 0; i < countDuplicates; i++) {
+                    sums.add(result);
+                }
+            }
+
+            // the end of the branch
+            done = true;
+
+            if (m > 1) {
+                int i = m - 2;
+
+                while (i >= 0 && done) {
+                    currentSum -= array[index[i]];
+                    index[i]++;
+
+                    if (index[i] == array.length - m + i + 1) {
+                        i--;
+                    } else {
+                        done = false;
+                    }
+                }
+
+                if (i >= 0) {
+                    currentSum += array[index[i]];
+
+                    for (i++; i <= m - 2; i++) {
+                        index[i] = index[i - 1] + 1;
+                        currentSum += array[index[i]];
+                    }
+                }
+            }
+        }
+
+        return sums;
+    }
+
     private static class IntArray {
 
         private int[] array;
@@ -171,7 +260,7 @@ public class MSumN {
         for (int[] sum : sums) {
             System.out.println("NSumM2.main result 1: " + Arrays.toString(sum));
         }
-        List<int[]> sums2 = nSumM2.findSumsWithHashMap(array, m, targetSum);
+        List<int[]> sums2 = nSumM2.findSumsBranches(array, m, targetSum);
         for (int[] sum : sums2) {
             System.out.println("NSumM2.main result 2: " + Arrays.toString(sum));
         }
