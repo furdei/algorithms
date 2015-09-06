@@ -8,6 +8,7 @@ import java.util.Map;
  */
 public class LRUCache<K, V> extends LinkedHashMap<K, V> {
 
+    private static final long serialVersionUID = 353017932;
     private static final int DEFAULT_CAPACITY = 8;
     private final int capacity;
 
