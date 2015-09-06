@@ -1,7 +1,9 @@
 package interview.array;
 
 /**
- * Find a minimum in a range
+ * Find a minimum in a range.
+ *
+ * This solution offers a constant-time response, but needs nlogn pre-processing time
  */
 public class RMQ {
 
