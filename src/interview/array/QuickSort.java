@@ -35,22 +35,26 @@ public class QuickSort {
             }
 
             if (l < r) {
-                int buffer = array[l];
-                array[l] = array[r];
-                array[r] = buffer;
+                swap(array, l, r);
                 l++;
                 r--;
             }
         }
 
-        if (array[r] > array[pivot]) {
-            int buffer = array[r];
-            array[r] = array[pivot];
-            array[pivot] = buffer;
+        while (l < to && array[l] <= array[pivot]) {
+            l++;
         }
 
+        swap(array, l, pivot);
+
         sort(array, from, r - 1);
-        sort(array, r + 1, to);
+        sort(array, l + 1, to);
+    }
+
+    private void swap(int[] array, int i, int j) {
+        int buffer = array[i];
+        array[i] = array[j];
+        array[j] = buffer;
     }
 
     public static void main(String[] args) {
