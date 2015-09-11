@@ -40,6 +40,7 @@ public class DivideInt {
     public static void main(String[] args) {
         DivideInt divideInt = new DivideInt();
         test(divideInt, 4, 2);
+        test(divideInt, 4, 3);
         test(divideInt, 1000, 10);
         test(divideInt, 25345, 23);
         test(divideInt, 4, 5);

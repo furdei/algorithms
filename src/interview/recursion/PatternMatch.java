@@ -39,8 +39,7 @@ public class PatternMatch {
                         return true;
                     }
 
-                    boolean match = match(s.substring(is), p.substring(ip + 1));
-                    if (match) {
+                    if (match(s.substring(is), p.substring(ip + 1))) {
                         return true;
                     }
                     return match(s.substring(is + 1), p.substring(ip));
