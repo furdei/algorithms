@@ -86,6 +86,8 @@ public class OneEditApart {
         System.out.println("oea(\"ccat\", \"cact\") => " + oneEditApart.oea("ccat", "cact"));
         System.out.println("oea(\"cat\", \"ca\") => " + oneEditApart.oea("cat", "ca"));
         System.out.println("oea(\"caat\", \"cat\") => " + oneEditApart.oea("cat", "ca"));
+        System.out.println("oea(\"cat\", \"cat\") => " + oneEditApart.oea("cat", "cat"));
+        System.out.println("oea(\"ab\", \"ba\") => " + oneEditApart.oea("ab", "ba"));
     }
 
 }
