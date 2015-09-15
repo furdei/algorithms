@@ -163,92 +163,136 @@ public class MSumN {
     }
 
     public List<int[]> findSumsWithHashMap(int[] array, int m, int sum) {
-        if (array == null || array.length < m || m < 1) {
+        if (array == null || array.length < m || m < 2) {
             return null;
         }
 
-        List<int[]> sums = new LinkedList<>();
-        int halfM = m / 2;
+        Map<Integer, List<int[]>> cache = new HashMap<>(); // sum -> list of position pairs
+        int l = array.length;
+        int m2 = m / 2;
+        int[] indices = new int[m2];
+        int curSum = 0;
+        List<int[]> result = new LinkedList<>();
+        Set<HashResult> hashResults = new HashSet<>();
 
-        int[] index = new int[halfM];
-        for (int i = 0; i < halfM; i++) {
-            index[i] = i;
+        for (int i = 0; i < m2; i++) {
+            indices[i] = i;
+            curSum += array[i];
         }
 
-        Map<Integer, List<Set<Integer>>> hashSums = new HashMap<>();
+        // m = 4
+        // m2= 2
+        // l = 7
+        //     0  1  2  3  4  5  6
+        // a = 3, 5, 9, 1, 4, 8, 2
+        // i = ^  ^
+        // i =                ^  ^
+        //                    0  1
 
-        while (index[0] < array.length - halfM) {
-            int currentSum = array[index[0]];
-            Set<Integer> indices = new HashSet<>();
-            for (int i = 0; i < halfM; i++) {
-                indices.add(index[i]);
-            }
+        while (indices[0] <= l - m2) {
+            int targetSum = sum - curSum;
+            List<int[]> options = cache.get(targetSum);
 
-            for (int i = 1; i < halfM; i++) {
-                currentSum += array[index[i]];
-            }
+            if (options != null) {
+                for (int[] option : options) {
+                    // check if an option contains one of currently analyzed indices
+                    boolean duplicate = false;
+                    for (int i = 0; i < m2 && !duplicate; i++) {
+                        int optI = Arrays.binarySearch(option, indices[i]);
+                        duplicate = optI >= 0 && optI < m2;
+                    }
 
-            List<Set<Integer>> listOfSums = hashSums.get(currentSum);
-            if (listOfSums == null) {
-                listOfSums = new LinkedList<>();
-                hashSums.put(currentSum, listOfSums);
-            }
-            listOfSums.add(indices);
+                    if (!duplicate) {
+                        HashResult hashResult = new HashResult();
+                        hashResult.result = new int[m];
+                        mergeIndices(hashResult.result, option, indices);
 
-            int i = halfM - 1;
-            while (i >= 0 && (++index[i] > array.length - halfM + i)) {
-                i--;
-            }
-
-            if (i >= 0) {
-                for (int j = i + 1; j < halfM; j++) {
-                    index[j] = index[j - 1] + 1;
-                }
-            }
-        }
-
-        Set<IntArray> processedIndices = new HashSet<>();
-
-        for (Map.Entry<Integer, List<Set<Integer>>> halfSum : hashSums.entrySet()) {
-            int targetSum = sum - halfSum.getKey();
-            List<Set<Integer>> indices = hashSums.get(targetSum);
-
-            if (indices != null) {
-                for (Set<Integer> ind1 : halfSum.getValue()) {
-                    for (Set<Integer> ind2 : indices) {
-                        Set<Integer> indicesCopy = new HashSet<>(ind1);
-                        indicesCopy.retainAll(ind2);
-                        if (indicesCopy.size() == 0) {
-                            int[] indicesArray = new int[m];
-                            Iterator<Integer> i = ind1.iterator();
-                            Iterator<Integer> j = ind2.iterator();
-                            Integer nextI = i.next();
-                            Integer nextJ = j.next();
-
-                            for (int k = 0; k < m; k++) {
-                                if (nextI != null && nextJ != null && nextI <= nextJ || (nextI != null && nextJ == null)) {
-                                    indicesArray[k] = array[nextI];
-                                    nextI = i.hasNext() ? i.next() : null;
-                                } else {
-                                    indicesArray[k] = array[nextJ];
-                                    nextJ = j.hasNext() ? j.next() : null;
-                                }
+                        if (!hashResults.contains(hashResult)) {
+                            hashResults.add(hashResult);
+                            int[] newRes = new int[m];
+                            for (int i = 0; i < m; i++) {
+                                newRes[i] = array[hashResult.result[i]];
                             }
-
-                            IntArray cache = new IntArray();
-                            cache.array = Arrays.copyOf(indicesArray, m);
-
-                            if (!processedIndices.contains(cache)) {
-                                sums.add(indicesArray);
-                                processedIndices.add(cache);
-                            }
+                            result.add(newRes);
                         }
                     }
                 }
             }
+
+            options = cache.get(curSum);
+            if (options == null) {
+                options = new LinkedList<>();
+                cache.put(curSum, options);
+            }
+            options.add(Arrays.copyOf(indices, m2));
+
+            curSum = incIndices(array, indices, curSum);
         }
 
-        return sums;
+        return result;
+    }
+
+    private static class HashResult {
+        int[] result;
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(result);
+        }
+
+        @Override
+        public boolean equals(Object a) {
+            return Arrays.equals(result, ((HashResult)a).result);
+        }
+    }
+
+    // increment indices and return a new sum
+    private int incIndices(int[] array, int[] indices, int sum) {
+        int l = array.length;
+        int m2 = indices.length;
+        int i = m2 - 1;
+        sum -= array[indices[i]];
+        indices[i]++;
+
+        while (i >= 0 && indices[i] > l - m2 + i) {
+            if (--i >= 0) {
+                sum -= array[indices[i]];
+                indices[i]++;
+            }
+        }
+
+        if (i >= 0) {
+            for (int j = i; j < m2; j++) {
+                if (j > i) {
+                    indices[j] = indices[j - 1] + 1;
+                }
+                sum += array[indices[j]];
+            }
+        }
+
+        return sum;
+    }
+
+    private void mergeIndices(int[] dst, int[] src1, int[] src2) {
+        int l1 = src1.length;
+        int l2 = src2.length;
+        int i1 = 0;
+        int i2 = 0;
+        int d = 0;
+
+        while (i1 < l1 || i2 < l2) {
+            if (i1 < l1 && i2 < l2) {
+                if (src1[i1] < src2[i2]) {
+                    dst[d++] = src1[i1++];
+                } else {
+                    dst[d++] = src2[i2++];
+                }
+            } else if (i1 < l1) {
+                dst[d++] = src1[i1++];
+            } else {
+                dst[d++] = src2[i2++];
+            }
+        }
     }
 
     public static void main(String[] args) {
@@ -263,6 +307,10 @@ public class MSumN {
         List<int[]> sums2 = nSumM2.findSumsBranches(array, m, targetSum);
         for (int[] sum : sums2) {
             System.out.println("NSumM2.main result 2: " + Arrays.toString(sum));
+        }
+        List<int[]> sums3 = nSumM2.findSumsWithHashMap(array, m, targetSum);
+        for (int[] sum : sums3) {
+            System.out.println("NSumM2.main result 3: " + Arrays.toString(sum));
         }
     }
 
