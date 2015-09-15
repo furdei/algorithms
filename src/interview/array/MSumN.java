@@ -170,12 +170,14 @@ public class MSumN {
         Map<Integer, List<int[]>> cache = new HashMap<>(); // sum -> list of position pairs
         int l = array.length;
         int m2 = m / 2;
-        int[] indices = new int[m2];
+        int mr = m - m2;
+        int[] indices = new int[mr];
         int curSum = 0;
         List<int[]> result = new LinkedList<>();
         Set<HashResult> hashResults = new HashSet<>();
+        int prvLastIndex = l;
 
-        for (int i = 0; i < m2; i++) {
+        for (int i = 0; i < mr; i++) {
             indices[i] = i;
             curSum += array[i];
         }
@@ -189,7 +191,7 @@ public class MSumN {
         // i =                ^  ^
         //                    0  1
 
-        while (indices[0] <= l - m2) {
+        while (indices[0] <= l - mr) {
             int targetSum = sum - curSum;
             List<int[]> options = cache.get(targetSum);
 
@@ -197,7 +199,7 @@ public class MSumN {
                 for (int[] option : options) {
                     // check if an option contains one of currently analyzed indices
                     boolean duplicate = false;
-                    for (int i = 0; i < m2 && !duplicate; i++) {
+                    for (int i = 0; i < mr && !duplicate; i++) {
                         int optI = Arrays.binarySearch(option, indices[i]);
                         duplicate = optI >= 0 && optI < m2;
                     }
@@ -219,12 +221,17 @@ public class MSumN {
                 }
             }
 
-            options = cache.get(curSum);
-            if (options == null) {
-                options = new LinkedList<>();
-                cache.put(curSum, options);
+            int curLastIndex = indices[mr - 1];
+            if (m2 == mr || curLastIndex <= prvLastIndex) {
+                int cacheSum = m2 == mr ? curSum : curSum - array[curLastIndex];
+
+                options = cache.get(cacheSum);
+                if (options == null) {
+                    options = new LinkedList<>();
+                    cache.put(cacheSum, options);
+                }
+                options.add(Arrays.copyOf(indices, m2));
             }
-            options.add(Arrays.copyOf(indices, m2));
 
             curSum = incIndices(array, indices, curSum);
         }
@@ -298,8 +305,8 @@ public class MSumN {
     public static void main(String[] args) {
         MSumN nSumM2 = new MSumN();
         int[] array = { 3, 4, 5, 6, 7, 8, 9 };
-        int m = 4;
-        int targetSum = 22;
+        int m = 5;
+        int targetSum = 30;
         List<int[]> sums = nSumM2.findSums(array, m, targetSum);
         for (int[] sum : sums) {
             System.out.println("NSumM2.main result 1: " + Arrays.toString(sum));
