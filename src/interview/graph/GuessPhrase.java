@@ -63,7 +63,7 @@ public class GuessPhrase {
         Map<Character, Integer> statFirst = new HashMap<>();
         Map<Character, Integer> seenDuplicates = new HashMap<>();
         Map<Character, Node> graph = new HashMap<>();
-        int tries = 10000;
+        int tries = 100000000;
 
         while (tries > 0) {
             String rand = getRandomTripplet();
@@ -97,6 +97,127 @@ public class GuessPhrase {
         dumpStat("Stat", stat);
         dumpStat("Stat First", statFirst);
         dumpStat("Seen Duplicates", seenDuplicates);
+        dumpGraph("Graph", graph.values());
+        findExpensivePath(graph, 'h', seenDuplicates);
+    }
+
+    private void findExpensivePath(Map<Character, Node> graph, char start, Map<Character, Integer> occurences) {
+        int maxCost = 0;
+        String maxPath = "";
+        Stack<PathState> stack = new Stack<PathState>();
+        stack.push(new PathState("", 0, new HashMap<Character, Integer>(), graph.get(start)));
+        List<CompletePath> list = new ArrayList<>();
+
+        while (stack.size() > 0) {
+            PathState state = stack.pop();
+
+            int visitedCount = markVisited(state.visited, state.current.c);
+            if (visitedCount <= occurences.get(state.current.c)) {
+                // we can move on
+                // check if we visited all the nodes yet
+                int unvisitedCount = 0;
+
+                for (Map.Entry<Character, Integer> occurence : occurences.entrySet()) {
+                    Integer visited = state.visited.get(occurence.getKey());
+                    if (visited == null) {
+                        visited = 0;
+                    }
+                    unvisitedCount += occurence.getValue() - visited;
+                    if (unvisitedCount > 0) {
+                        break;
+                    }
+                }
+
+                if (unvisitedCount == 0) {
+                    // a valid path, could be one of the optimal
+                    String foundPath = state.route + state.current.c;
+                    //System.out.println("Cost: " + state.cost + " Path: " + foundPath);
+                    list.add(new CompletePath(state.cost, foundPath));
+
+                    if (state.cost > maxCost) {
+                        maxCost = state.cost;
+                        maxPath = foundPath;
+                    }
+                } else {
+                    // try all the possible routs from here
+                    for (Map.Entry<Node, Integer> next : state.current.next.entrySet()) {
+                        stack.push(new PathState(
+                                state.route + state.current.c,
+                                state.cost + next.getValue(),
+                                copyOf(state.visited),
+                                next.getKey()));
+                    }
+                }
+            }
+        }
+
+        System.out.println("Max Cost: " + maxCost + " Path: " + maxPath);
+        Collections.sort(list, new Comparator<CompletePath>() {
+            public int compare(CompletePath a, CompletePath b) {
+                return b.cost - a.cost;
+            }
+        });
+        for (CompletePath p : list) {
+            System.out.println(p);
+        }
+    }
+
+    private static class CompletePath {
+        int cost;
+        String path;
+
+        public CompletePath(int cost, String path) {
+            this.cost = cost;
+            this.path = path;
+        }
+
+        public String toString() {
+            return "Cost: " + cost + " Path: " + path;
+        }
+    }
+
+    private int markVisited(Map<Character, Integer> visited, char c) {
+        Integer count = visited.get(c);
+        if (count == null) {
+            count = 1;
+        } else {
+            count++;
+        }
+        visited.put(c, count);
+        return count;
+    }
+
+    private static class PathState {
+        String route;
+        int cost;
+        Map<Character, Integer> visited;
+        Node current;
+
+        public PathState(String route, int cost, Map<Character, Integer> visited, Node current) {
+            this.route = route;
+            this.cost = cost;
+            this.visited = visited;
+            this.current = current;
+        }
+
+        public String toString() {
+            return "R: " + route + " C: " + cost + " V: " + visited + " N: " + current;
+        }
+    }
+
+    private Map<Character, Integer> copyOf(Map<Character, Integer> src) {
+        Map<Character, Integer> dst = new HashMap<>();
+        for (Map.Entry<Character, Integer> entry : src.entrySet()) {
+            dst.put(entry.getKey(), entry.getValue());
+        }
+        return dst;
+    }
+
+    private void dumpGraph(String title, Collection<Node> graph) {
+        System.out.println(title + ":");
+        for (Node node : graph) {
+            System.out.println(node);
+        }
     }
 
     private static class Node {
@@ -108,6 +229,14 @@ public class GuessPhrase {
             this.c = c;
             next = new HashMap<>();
             prev = new HashMap<>();
+        }
+
+        public String toString() {
+            String nextStr = "";
+            for (Node node : next.keySet()) {
+                nextStr += node.c + "(" + next.get(node) + ") ";
+            }
+            return c + " -> " + nextStr;
         }
     }
 
