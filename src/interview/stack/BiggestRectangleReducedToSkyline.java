@@ -35,9 +35,7 @@ public class BiggestRectangleReducedToSkyline {
         int w = map[0].length;
 
         int[][] skylines = new int[h][w];
-        for (int i = 0; i < w; i++) {
-            skylines[0][i] = map[0][i];
-        }
+        System.arraycopy(map[0], 0, skylines[0], 0, w);
 
         int max = findMaxSquare(skylines[0]);
 
@@ -103,8 +101,8 @@ public class BiggestRectangleReducedToSkyline {
     }
 
     private static void printMatrix(int[][] m) {
-        for (int i = 0; i < m.length; i++) {
-            System.out.println(Arrays.toString(m[i]));
+        for (int[] aM : m) {
+            System.out.println(Arrays.toString(aM));
         }
     }
 
